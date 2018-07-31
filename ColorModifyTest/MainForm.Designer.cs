@@ -28,6 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.trackBarH = new System.Windows.Forms.TrackBar();
             this.trackBarS = new System.Windows.Forms.TrackBar();
             this.trackBarV = new System.Windows.Forms.TrackBar();
@@ -39,8 +41,12 @@
             this.labelV = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.renderView1 = new ColorModifyTest.RenderView();
             this.buttonReset = new System.Windows.Forms.Button();
+            this.labelElapseTime = new System.Windows.Forms.Label();
+            this.timer = new System.Windows.Forms.Timer(this.components);
+            this.button1 = new System.Windows.Forms.Button();
+            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.renderView1 = new ColorModifyTest.RenderView();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarH)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarS)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarV)).BeginInit();
@@ -146,6 +152,8 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.labelElapseTime);
+            this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.buttonReset);
             this.groupBox1.Controls.Add(this.trackBarH);
             this.groupBox1.Controls.Add(this.labelV);
@@ -156,23 +164,12 @@
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Location = new System.Drawing.Point(552, 12);
+            this.groupBox1.Location = new System.Drawing.Point(540, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(287, 215);
+            this.groupBox1.Size = new System.Drawing.Size(287, 252);
             this.groupBox1.TabIndex = 9;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "操作";
-            // 
-            // renderView1
-            // 
-            this.renderView1.Hue = 0;
-            this.renderView1.Image = global::ColorModifyTest.Properties.Resources.sample;
-            this.renderView1.Location = new System.Drawing.Point(274, 12);
-            this.renderView1.Name = "renderView1";
-            this.renderView1.Saturation = 0;
-            this.renderView1.Size = new System.Drawing.Size(244, 449);
-            this.renderView1.TabIndex = 0;
-            this.renderView1.Value = 0;
             // 
             // buttonReset
             // 
@@ -184,6 +181,45 @@
             this.buttonReset.UseVisualStyleBackColor = true;
             this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
             // 
+            // labelElapseTime
+            // 
+            this.labelElapseTime.AutoSize = true;
+            this.labelElapseTime.Location = new System.Drawing.Point(113, 179);
+            this.labelElapseTime.Name = "labelElapseTime";
+            this.labelElapseTime.Size = new System.Drawing.Size(0, 12);
+            this.labelElapseTime.TabIndex = 10;
+            // 
+            // timer
+            // 
+            this.timer.Interval = 500;
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(12, 211);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 11;
+            this.button1.Text = "画像を変更する";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // openFileDialog
+            // 
+            this.openFileDialog.Filter = "PNGファイル|*.png|JPEGファイル|*.jpg|BMPファイル|*.bmp|全てのファイル|*.*";
+            this.openFileDialog.Title = "画像を読み込む";
+            // 
+            // renderView1
+            // 
+            this.renderView1.Hue = 0;
+            this.renderView1.Image = ((System.Drawing.Image)(resources.GetObject("renderView1.Image")));
+            this.renderView1.Location = new System.Drawing.Point(274, 12);
+            this.renderView1.Name = "renderView1";
+            this.renderView1.Saturation = 0;
+            this.renderView1.Size = new System.Drawing.Size(244, 449);
+            this.renderView1.TabIndex = 0;
+            this.renderView1.Value = 0;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -194,6 +230,9 @@
             this.Controls.Add(this.renderView1);
             this.Name = "MainForm";
             this.Text = "カラー調整テスト";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
+            this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.Resize += new System.EventHandler(this.MainForm_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.trackBarH)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarS)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarV)).EndInit();
@@ -219,6 +258,10 @@
         private System.Windows.Forms.Label labelV;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button buttonReset;
+        private System.Windows.Forms.Label labelElapseTime;
+        private System.Windows.Forms.Timer timer;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.OpenFileDialog openFileDialog;
     }
 }
 

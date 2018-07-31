@@ -15,7 +15,7 @@ namespace ColorModifyTest
         struct ColorHSV
         {
             private int hue; // 0-360
-            private float saturation; // 0.0-1.0
+            private byte saturation; // 0-255
             private byte value; // 0-255
             public int Hue
             {
@@ -30,23 +30,12 @@ namespace ColorModifyTest
                     this.hue = val;
                 }
             }
-            public float Saturation
+            public byte Saturation
             {
                 get { return this.saturation; }
                 set
                 {
-                    if (value < 0.0f)
-                    {
-                        this.saturation = 0.0f;
-                    }
-                    else if (value > 1.0f)
-                    {
-                        this.saturation = 1.0f;
-                    }
-                    else
-                    {
-                        this.saturation = value;
-                    }
+                    saturation = value;
                 }
             }
             public byte Value
@@ -57,27 +46,44 @@ namespace ColorModifyTest
                     this.value = value;
                 }
             }
-            public static ColorHSV FromHSV(int hue, float saturation, int value)
+            public static ColorHSV FromHSV(int hue, int saturation, int value)
             {
                 ColorHSV ret = new ColorHSV();
                 ret.Hue = hue;
-                ret.Saturation = saturation;
+                ret.Saturation = (byte)((saturation > 255) ? 255 : ((saturation < 0) ? 0 : saturation));
                 ret.Value = (byte)((value > 255) ? 255 : ((value < 0) ? 0 : value));
                 return ret;
             }
         }
 
         private Image image;
+        private ImageBuffer imageBuffer;
+        private ImageBuffer renderBuffer;
+
+        private System.Diagnostics.Stopwatch sw;
+        private TimeSpan processTime;
 
         public RenderView()
         {
+            sw = new System.Diagnostics.Stopwatch();
             InitializeComponent();
+
         }
 
         public Image Image
         {
             get { return this.image; }
-            set { this.image = value; }
+            set {
+                this.image = new Bitmap(value);
+                if (image == null)
+                {
+                    imageBuffer = null;
+                } else
+                {
+                    imageBuffer = ImageBuffer.CreateFrom(image);
+                }
+                Invalidate();
+            }
         }
 
         public int Hue
@@ -94,20 +100,38 @@ namespace ColorModifyTest
             get; set;
         }
 
+        public TimeSpan ProcessTime
+        {
+            get { return processTime; }
+
+        }
+
         protected override void OnPaint(PaintEventArgs evt)
         {
             Graphics g = evt.Graphics;
 
-            if (image != null)
+            g.FillRectangle(new SolidBrush(BackColor), 0, 0, Width, Height);
+
+            
+            if (imageBuffer != null)
             {
                 try
                 {
-                    Image drawImage = ConvertImage(image, Hue, Saturation, Value);
+                    if ((renderBuffer == null) || (renderBuffer.Width != imageBuffer.Width) || (renderBuffer.Height != imageBuffer.Height))
+                    {
+                        renderBuffer = ImageBuffer.Create(imageBuffer.Width, imageBuffer.Height);
+                    }
+                    sw.Reset();
+                    sw.Start();
+                    Image drawImage = ConvertImage(imageBuffer, renderBuffer, Hue, Saturation, Value);
+                    sw.Stop();
+                    processTime = sw.Elapsed;
                     g.DrawImageUnscaled(drawImage, 0, 0);
                     drawImage.Dispose();
                 }
                 catch (Exception e)
                 {
+                    System.Console.WriteLine(e.StackTrace);
                 }
             }
 
@@ -123,25 +147,41 @@ namespace ColorModifyTest
             pen.Dispose();
         }
 
-        private Image ConvertImage(Image srcImage, int hue, int saturation, int value)
+        /// <summary>
+        /// 画像を変換して取得する。
+        /// </summary>
+        /// <param name="srcImage"></param>
+        /// <param name="buffer">バッファ</param>
+        /// <param name="hue"></param>
+        /// <param name="saturation"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private Image ConvertImage(ImageBuffer srcImage, ImageBuffer buffer, int hue, int saturation, int value)
         {
-            Bitmap src = new Bitmap(srcImage);
-            Bitmap dst = new Bitmap(src.Width, src.Height, PixelFormat.Format32bppArgb);
-
-            float S = saturation / 255.0f;
-            for (int y = 0; y < src.Height; y++)
+            for (int y = 0; y < srcImage.Height; y++)
             {
-                for (int x = 0; x < src.Width; x++)
+                for (int x = 0; x < srcImage.Width; x++)
                 {
-                    Color c = src.GetPixel(x, y);
+                    Color c = srcImage.GetPixel(x, y);
 
-                    dst.SetPixel(x, y, ConvertPixel(c, hue, S, value));
+                    ConvertPixel(c, hue, saturation, value);
+                    //buffer.SetPixel(x, y, c);
+                    buffer.SetPixel(x, y, ConvertPixel(c, hue, saturation, value));
                 }
             }
 
-            return dst;
+            return buffer.GetImage();
         }
-        private static Color ConvertPixel(Color c, int hue, float saturation, int value)
+
+        /// <summary>
+        /// 画像を変換して取得する。
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="hue"></param>
+        /// <param name="saturation"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private static Color ConvertPixel(Color c, int hue, int saturation, int value)
         {
             if (c.A == 0)
             {
@@ -151,7 +191,7 @@ namespace ColorModifyTest
             // Convert RGB to HSV
             ColorHSV srcHSV = ConvertRGBtoHSV(c);
             int h = (srcHSV.Hue + hue) % 360;
-            float s = srcHSV.Saturation + saturation;
+            int s = srcHSV.Saturation + saturation;
             int v = srcHSV.Value + value;
 
             // Convert HSV to RGB
@@ -199,10 +239,10 @@ namespace ColorModifyTest
                 h = 0;
             }
 
-            float s;
+            int s;
             if (max > 0)
             {
-                s = (max / 255.0f - min / 255.0f) / (float)(max / 255.0f);
+                s = ((max - min) * 255) / max;
             }
             else
             {
@@ -215,9 +255,9 @@ namespace ColorModifyTest
         private static Color ConvertHSVtoRGB(ColorHSV c, byte a)
         {
             int h = (c.Hue / 60);
-            int P = (int)(c.Value * (1.0f - c.Saturation));
-            int Q = (int)(c.Value * (1.0f - c.Saturation * (c.Hue / 60.0f - h)));
-            int T = (int)(c.Value * (1.0f - c.Saturation * (1.0f - c.Hue / 60.0f + h)));
+            int P = (int)(c.Value * (255 - c.Saturation)) / 255;
+            int Q = (int)(c.Value * (255 - c.Saturation * (c.Hue / 60.0f - h))) / 255;
+            int T = (int)(c.Value * (255 - c.Saturation * (1.0f - c.Hue / 60.0f + h))) / 255;
             switch (h)
             {
                 case 0:
